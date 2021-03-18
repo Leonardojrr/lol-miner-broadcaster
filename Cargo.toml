@@ -1,0 +1,15 @@
+[package]
+name = "lol-miner-broadcaster"
+version = "0.1.0"
+authors = ["Leonardo Rodrigues <leonardojrr1@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio-tungstenite = "0.14.0"
+tokio = { version = "1.3.0", features = ["full"] }
+futures-util = "0.3.13"
+tungstenite = "0.13.0"
+sysinfo = "0.16.4"
+regex = "1.4.5"
