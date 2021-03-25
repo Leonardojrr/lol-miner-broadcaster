@@ -20,24 +20,50 @@ pub enum MinerEvent {
 
 pub enum MinerErr {
     MinerAlreadyExist,
-    MinerNotFound,
+    MinerNotStarted,
 }
 
 pub fn make_event(e: MinerEvent, miners_processes: &mut Vec<MinerProcess>) -> Result<(), MinerErr> {
     match e {
-        MinerEvent::StartMiner(region) => {}
-        MinerEvent::CloseMiner(region) => {}
-        MinerEvent::CloseAll => {}
+        MinerEvent::StartMiner(region) => open_miner(region, miners_processes),
+
+        MinerEvent::CloseMiner(region) => close_miner(region, miners_processes),
+
+        MinerEvent::CloseAll => close_all_miners(miners_processes),
     }
+}
+
+fn close_miner(region: String, miners_processes: &mut Vec<MinerProcess>) -> Result<(), MinerErr> {
+    for index in 0..miners_processes.len() {
+        if miners_processes[index].region == region {
+            miners_processes.remove(index);
+            return Ok(());
+        }
+    }
+
+    Err(MinerErr::MinerNotStarted)
+}
+
+fn close_all_miners(miners_processes: &mut Vec<MinerProcess>) -> Result<(), MinerErr> {
+    miners_processes.clear();
     Ok(())
 }
 
-fn close_miner(region: String, miners_processes: &mut Vec<MinerProcess>) {}
+fn open_miner(region: String, miners_processes: &mut Vec<MinerProcess>) -> Result<(), MinerErr> {
+    for process in miners_processes.iter() {
+        if process.region == region {
+            return Err(MinerErr::MinerAlreadyExist);
+        }
+    }
 
-fn close_all_miners(miners_processes: &mut Vec<MinerProcess>) {}
+    let process = Command::new("lol-project")
+        .arg(region.clone())
+        .spawn()
+        .unwrap();
 
-fn open_miner(region: String, miners_processes: &mut Vec<MinerProcess>) {
-    for process in miners_processes {}
+    miners_processes.push(MinerProcess { region, process });
+
+    Ok(())
 }
 
 pub fn miners_resources_usage(miners_processes: &Vec<MinerProcess>) -> Vec<MinerInfo> {
