@@ -23,7 +23,10 @@ pub enum MinerErr {
     MinerNotStarted,
 }
 
-pub fn make_event(e: MinerEvent, miners_processes: &mut Vec<MinerProcess>) -> Result<(), MinerErr> {
+pub fn affect_minners(
+    e: MinerEvent,
+    miners_processes: &mut Vec<MinerProcess>,
+) -> Result<(), MinerErr> {
     match e {
         MinerEvent::StartMiner(region) => open_miner(region, miners_processes),
 

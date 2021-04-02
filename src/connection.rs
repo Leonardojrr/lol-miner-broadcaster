@@ -5,10 +5,44 @@ use futures_util::{
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::{accept_async, WebSocketStream};
 use tungstenite::Message;
+use uuid::Uuid;
 
-pub type Sender = SplitSink<WebSocketStream<TcpStream>, Message>;
+pub struct Sender {
+    pub id: Uuid,
+    pub sink: SplitSink<WebSocketStream<TcpStream>, Message>,
+}
 
-pub type Receiver = SplitStream<WebSocketStream<TcpStream>>;
+pub struct Receiver {
+    pub id: Uuid,
+    pub stream: SplitStream<WebSocketStream<TcpStream>>,
+}
+
+pub struct SenderAdmin {
+    senders: Vec<Sender>,
+}
+
+impl SenderAdmin {
+    pub fn new() -> Self {
+        Self { senders: vec![] }
+    }
+
+    pub fn push(&mut self, sender: Sender) {
+        self.senders.push(sender);
+    }
+
+    pub fn remove(&mut self, index: usize) {
+        self.senders.remove(index);
+    }
+
+    pub async fn broadcast(&mut self, msg: Message) {
+        for index in 0..self.senders.len() {
+            let _ = self.senders[index].sink.send(msg.clone()).await;
+        }
+    }
+    pub async fn resend(&mut self, msg: Message, sender_index: usize) {
+        let _ = self.senders[sender_index].sink.send(msg.clone()).await;
+    }
+}
 
 pub struct SocketListener {
     listener: TcpListener,
@@ -29,18 +63,9 @@ impl SocketListener {
         let (stream, _) = self.listener.accept().await.unwrap();
         let ws = accept_async(stream).await.unwrap();
 
-        let (sender, receiver) = ws.split();
+        let id = Uuid::new_v4();
+        let (sink, stream) = ws.split();
 
-        (sender, receiver)
-    }
-}
-
-pub async fn broadcast(msg: Message, sender_index: usize, senders: &mut Vec<Sender>) {
-    if let Message::Text(_) = msg {
-        for index in 0..senders.len() {
-            if index != sender_index {
-                senders[index].send(msg.clone()).await;
-            }
-        }
+        (Sender { id, sink }, Receiver { id, stream })
     }
 }
