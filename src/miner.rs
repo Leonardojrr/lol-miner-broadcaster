@@ -1,4 +1,5 @@
-use std::process::{Child, Command};
+use std::io::prelude::*;
+use std::process::{Child, Command, Stdio};
 use sysinfo::{ProcessExt, System, SystemExt};
 
 pub struct MinerProcess {
@@ -59,7 +60,7 @@ fn open_miner(region: String, miners_processes: &mut Vec<MinerProcess>) -> Resul
         }
     }
 
-    let process = Command::new("lol-project")
+    let mut process = Command::new("lol-project")
         .arg(region.clone())
         .spawn()
         .unwrap();
